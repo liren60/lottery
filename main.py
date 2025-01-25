@@ -95,7 +95,18 @@ class RandomNumberRolling(QWidget):
         self.modify_button.clicked.connect(self.modify_entry)
         delete_modify_layout.addWidget(self.modify_button)
         layout.addLayout(delete_modify_layout)
+        
+        # 导入/导出Excel
+        import_export_layout = QHBoxLayout()
+        self.import_button = QPushButton("导入 Excel", self)
+        self.import_button.clicked.connect(self.import_excel)
+        import_export_layout.addWidget(self.import_button)
+        self.export_button = QPushButton("导出 Excel", self)
+        self.export_button.clicked.connect(self.export_excel)
+        import_export_layout.addWidget(self.export_button)
+        layout.addLayout(import_export_layout)
 
+        self.setLayout(layout)
         # 开始/停止、全屏和退出按钮
         start_stop_layout = QHBoxLayout()
         self.start_stop_button = QPushButton("开始(空格快捷键)", self)
@@ -112,19 +123,7 @@ class RandomNumberRolling(QWidget):
         start_stop_layout.addWidget(self.exit_app_button)
         layout.addLayout(start_stop_layout)
 
-        # 导入/导出Excel
-        import_export_layout = QHBoxLayout()
-        self.import_button = QPushButton("导入 Excel", self)
-        self.import_button.clicked.connect(self.import_excel)
-        import_export_layout.addWidget(self.import_button)
-        self.export_button = QPushButton("导出 Excel", self)
-        self.export_button.clicked.connect(self.export_excel)
-        import_export_layout.addWidget(self.export_button)
-        layout.addLayout(import_export_layout)
 
-        self.setLayout(layout)
-        self.listbox.keyPressEvent = self.keyPressEvent_listbox
-        self.listbox.keyReleaseEvent = self.keyReleaseEvent_listbox
 
     def load_data(self):
         fname = QFileDialog.getOpenFileName(self, '打开文件', os.getcwd(), "JSON files (*.json)")
@@ -262,18 +261,6 @@ class RandomNumberRolling(QWidget):
 
     def exit_program(self):
         QApplication.quit()
-
-    def keyPressEvent_listbox(self, event):
-        if event.modifiers() & Qt.ShiftModifier:
-            self.listbox.setSelectionMode(QListWidget.ExtendedSelection)
-        else:
-            self.listbox.setSelectionMode(QListWidget.SingleSelection)
-        QListWidget.keyPressEvent(self.listbox, event)
-
-    def keyReleaseEvent_listbox(self, event):
-        if not (event.modifiers() & Qt.ShiftModifier):
-            self.listbox.setSelectionMode(QListWidget.SingleSelection)
-        QListWidget.keyReleaseEvent(self.listbox, event)
 
     def toggle_fullscreen(self):
         if self.is_fullscreen:
