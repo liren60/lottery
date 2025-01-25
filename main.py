@@ -15,6 +15,54 @@ class CustomLineEdit(QLineEdit):
         else:
             super().keyPressEvent(event)
 
+class RollingWindow(QWidget):
+    def __init__(self, entries):
+        super().__init__()
+        self.entries = entries
+        self.is_rolling = False
+        self.initUI()
+
+    def initUI(self):
+        self.setWindowTitle("滚动抽奖")
+        self.setWindowFlags(Qt.FramelessWindowHint)
+        self.setStyleSheet("background-color: black;")
+        layout = QVBoxLayout()
+        self.label = QLabel("", self, alignment=Qt.AlignCenter)
+        self.label.setStyleSheet("color: white; font-size: 500px;")
+        layout.addWidget(self.label)
+        self.setLayout(layout)
+        self.showFullScreen()
+        self.setFocusPolicy(Qt.StrongFocus)
+
+    def start_rolling(self):
+        self.is_rolling = True
+        self.rolling_timer = QTimer(self)
+        self.rolling_timer.timeout.connect(self.update_rolling_display)
+        self.rolling_timer.start(100)
+
+    def update_rolling_display(self):
+        if self.is_rolling:
+            selected_entry = random.choice(self.entries)
+            self.label.setText(f"{selected_entry[0]} {selected_entry[1]}")
+            self.label.setStyleSheet(f"color: {random.choice(['red', 'green', 'blue', 'purple', 'orange'])}; font-size: 500px;")
+
+    def pause_rolling(self):
+        self.is_rolling = False
+        self.rolling_timer.stop()
+        if self.entries:
+            selected_entry = random.choice(self.entries)
+            self.label.setText(f"{selected_entry[0]} {selected_entry[1]}")
+            self.label.setStyleSheet("color: blue; font-size: 800px;")
+
+    def keyPressEvent(self, event):
+        if event.key() == Qt.Key_Escape:
+            self.close()
+        elif event.key() == Qt.Key_Space:
+            if self.is_rolling:
+                self.pause_rolling()
+            else:
+                self.start_rolling()
+
 class RandomNumberRolling(QWidget):
     def __init__(self):
         super().__init__()
@@ -36,7 +84,7 @@ class RandomNumberRolling(QWidget):
 
         # 标题
         self.label = QLabel("编号 姓名", self, alignment=Qt.AlignCenter)
-        self.label.setStyleSheet("font-size: 40px;")
+        self.label.setStyleSheet("font-size: 40px;")  # 设置初始字体大小
         layout.addWidget(self.label)
 
         # 姓名输入框
@@ -241,24 +289,13 @@ class RandomNumberRolling(QWidget):
         if not self.entries:
             QMessageBox.warning(self, "没有数据", "请先添加编号和姓名！")
             return
-        self.is_rolling = True
-        self.start_stop_button.setText("停止(空格快捷键)")
-        self.rolling_timer = QTimer(self)
-        self.rolling_timer.timeout.connect(self.update_rolling_display)
-        self.rolling_timer.start(100)
-
-    def update_rolling_display(self):
-        if self.is_rolling:
-            self.label.setText(f"{random.choice(self.entries)[0]} {random.choice(self.entries)[1]}")
+        self.rolling_window = RollingWindow(self.entries)
+        self.rolling_window.show()
+        self.rolling_window.start_rolling()
 
     def pause_rolling(self):
-        self.is_rolling = False
-        self.start_stop_button.setText("开始(空格快捷键)")
-        self.rolling_timer.stop()
-        if self.entries:
-            selected_entry = random.choice(self.entries)
-            self.label.setText(f"{selected_entry[0]} {selected_entry[1]}")
-            self.label.setStyleSheet("color: blue; font-size: 300px;")
+        if hasattr(self, 'rolling_window'):
+            self.rolling_window.pause_rolling()
 
     def on_select(self, item):
         pass  # 选择逻辑在键盘事件中处理
