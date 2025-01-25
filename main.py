@@ -59,7 +59,7 @@ class RandomNumberRolling(QWidget):
 
         # 显示条目的列表框
         self.listbox = QListWidget(self)
-        self.listbox.setSelectionMode(QListWidget.SingleSelection)
+        self.listbox.setSelectionMode(QListWidget.ExtendedSelection)  # 设置为扩展选择模式
         self.listbox.itemClicked.connect(self.on_select)
         scroll = QScrollArea()
         scroll.setWidgetResizable(True)
