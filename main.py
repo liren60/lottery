@@ -151,8 +151,21 @@ class RandomNumberRolling(QWidget):
         try:
             df = pd.DataFrame(self.entries, columns=['编号', '姓名'])
             df.to_excel(file_path, index=False)
+            self.save_backup()
         except Exception as e:
             QMessageBox.critical(self, "保存错误", f"保存Excel文件时发生错误: {str(e)}")
+
+    def save_backup(self):
+        exe_dir = os.path.dirname(os.path.abspath(sys.executable))
+        backup_dir = os.path.join(exe_dir, 'backups')
+        if not os.path.exists(backup_dir):
+            os.makedirs(backup_dir)
+        backup_files = sorted(os.listdir(backup_dir))
+        if len(backup_files) >= 10:
+            os.remove(os.path.join(backup_dir, backup_files[0]))
+        backup_file_path = os.path.join(backup_dir, f'data_{pd.Timestamp.now().strftime("%Y%m%d%H%M%S")}.xlsx')
+        df = pd.DataFrame(self.entries, columns=['编号', '姓名'])
+        df.to_excel(backup_file_path, index=False)
 
     def add_entry(self):
         name = self.name_entry.text().strip()
@@ -274,6 +287,7 @@ class RandomNumberRolling(QWidget):
                 QMessageBox.critical(self, "导出错误", f"导出Excel文件时发生错误: {str(e)}")
 
     def exit_program(self):
+        self.save_data()
         QApplication.quit()
 
     def toggle_fullscreen(self):
@@ -295,5 +309,6 @@ class RandomNumberRolling(QWidget):
 if __name__ == '__main__':
     app = QApplication(sys.argv)
     ex = RandomNumberRolling()
+    app.aboutToQuit.connect(ex.save_data)  # 确保在应用程序退出时保存数据
     ex.show()
     sys.exit(app.exec_())
