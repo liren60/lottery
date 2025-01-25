@@ -1,7 +1,6 @@
 import sys
 import random
 import pandas as pd
-import json
 import os
 from PyQt5.QtWidgets import (QApplication, QWidget, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, 
                              QPushButton, QListWidget, QScrollArea, QMessageBox, QFileDialog, 
@@ -26,6 +25,7 @@ class RandomNumberRolling(QWidget):
         self.is_fullscreen = False
         self.current_page = 0
         self.entries_per_page = 10
+        self.total_pages = 1
 
         self.initUI()
         self.load_data()
@@ -69,7 +69,7 @@ class RandomNumberRolling(QWidget):
 
         # 分页控制
         page_layout = QHBoxLayout()
-        self.page_label = QLabel(f"当前页: {self.current_page + 1}", self)
+        self.page_label = QLabel(f"当前页: {self.current_page + 1} / {self.total_pages}", self)
         page_layout.addWidget(self.page_label)
         page_layout.addWidget(QLabel("每页显示:", self))
         self.entries_per_page_entry = QLineEdit(str(self.entries_per_page), self)
@@ -95,7 +95,7 @@ class RandomNumberRolling(QWidget):
         self.modify_button.clicked.connect(self.modify_entry)
         delete_modify_layout.addWidget(self.modify_button)
         layout.addLayout(delete_modify_layout)
-        
+
         # 导入/导出Excel
         import_export_layout = QHBoxLayout()
         self.import_button = QPushButton("导入 Excel", self)
@@ -106,7 +106,6 @@ class RandomNumberRolling(QWidget):
         import_export_layout.addWidget(self.export_button)
         layout.addLayout(import_export_layout)
 
-        self.setLayout(layout)
         # 开始/停止、全屏和退出按钮
         start_stop_layout = QHBoxLayout()
         self.start_stop_button = QPushButton("开始(空格快捷键)", self)
@@ -123,32 +122,45 @@ class RandomNumberRolling(QWidget):
         start_stop_layout.addWidget(self.exit_app_button)
         layout.addLayout(start_stop_layout)
 
+        self.setLayout(layout)
 
+        # 设置窗口大小
+        self.resize(800, 1000)
+        
 
     def load_data(self):
-        fname = QFileDialog.getOpenFileName(self, '打开文件', os.getcwd(), "JSON files (*.json)")
-        if fname[0]:
-            with open(fname[0], 'r', encoding='utf-8') as file:
-                data = json.load(file)
-                self.entries = [(entry['id'], entry['name']) for entry in data]
+        exe_dir = os.path.dirname(os.path.abspath(sys.executable))
+        file_path = os.path.join(exe_dir, 'data.xlsx')
+        if os.path.exists(file_path):
+            try:
+                df = pd.read_excel(file_path)
+                self.entries = list(df.itertuples(index=False, name=None))
                 self.current_id = max((entry[0] for entry in self.entries), default=0) + 1
                 self.update_listbox()
+            except Exception as e:
+                QMessageBox.critical(self, "加载错误", f"加载Excel文件时发生错误: {str(e)}")
         else:
-            QMessageBox.information(self, "数据加载", "没有选择文件。")
+            QMessageBox.information(self, "数据加载", "默认文件不存在。")
 
     def save_data(self):
         if not self.entries:
             QMessageBox.warning(self, "没有数据", "没有要保存的数据！")
             return
-        fname = QFileDialog.getSaveFileName(self, '保存文件', os.getcwd(), "JSON files (*.json)")
-        if fname[0]:
-            with open(fname[0], 'w', encoding='utf-8') as file:
-                json.dump([{'id': id, 'name': name} for id, name in self.entries], file, ensure_ascii=False, indent=4)
+        exe_dir = os.path.dirname(os.path.abspath(sys.executable))
+        file_path = os.path.join(exe_dir, 'data.xlsx')
+        try:
+            df = pd.DataFrame(self.entries, columns=['编号', '姓名'])
+            df.to_excel(file_path, index=False)
+        except Exception as e:
+            QMessageBox.critical(self, "保存错误", f"保存Excel文件时发生错误: {str(e)}")
 
     def add_entry(self):
         name = self.name_entry.text().strip()
         if not name:
             QMessageBox.warning(self, "输入错误", "请输入姓名！")
+            return
+        if any(entry[1] == name for entry in self.entries):
+            QMessageBox.warning(self, "输入错误", "已有相同的姓名！")
             return
         self.entries.append((self.current_id, name))
         self.current_id += 1
@@ -180,7 +192,8 @@ class RandomNumberRolling(QWidget):
         start, end = self.current_page * self.entries_per_page, (self.current_page + 1) * self.entries_per_page
         for entry in self.entries[start:min(end, len(self.entries))]:
             self.listbox.addItem(f"{entry[0]} {entry[1]}")
-        self.page_label.setText(f"当前页: {self.current_page + 1}")
+        self.total_pages = (len(self.entries) + self.entries_per_page - 1) // self.entries_per_page
+        self.page_label.setText(f"当前页: {self.current_page + 1} / {self.total_pages}")
 
     def prev_page(self):
         if self.current_page > 0:
@@ -230,7 +243,8 @@ class RandomNumberRolling(QWidget):
         self.start_stop_button.setText("开始(空格快捷键)")
         self.rolling_timer.stop()
         if self.entries:
-            self.label.setText(f"{random.choice(self.entries)[0]} {random.choice(self.entries)[1]}")
+            selected_entry = random.choice(self.entries)
+            self.label.setText(f"{selected_entry[0]} {selected_entry[1]}")
             self.label.setStyleSheet("color: blue; font-size: 300px;")
 
     def on_select(self, item):
