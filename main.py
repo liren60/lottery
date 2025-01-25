@@ -349,3 +349,5 @@ if __name__ == '__main__':
     app.aboutToQuit.connect(ex.save_data)  # 确保在应用程序退出时保存数据
     ex.show()
     sys.exit(app.exec_())
+
+#测试密码功能
