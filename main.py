@@ -75,6 +75,7 @@ class RandomNumberRolling(QWidget):
         self.current_page = 0
         self.entries_per_page = 10
         self.total_pages = 1
+        self.window_size = (800, 1000)
 
         self.load_settings()  # 加载设置
         self.initUI()
@@ -101,6 +102,7 @@ class RandomNumberRolling(QWidget):
         name_layout = QHBoxLayout()
         name_layout.addWidget(QLabel("姓名", self))
         self.name_entry = CustomLineEdit(self)  # 使用自定义的LineEdit
+        self.name_entry.setPlaceholderText("请输入姓名")  # 设置提示词
         self.name_entry.returnPressed.connect(self.add_entry)  # 添加回车快捷键
         name_layout.addWidget(self.name_entry)
         layout.addLayout(name_layout)
@@ -179,8 +181,12 @@ class RandomNumberRolling(QWidget):
         self.setLayout(layout)
 
         # 设置窗口大小
-        self.resize(800, 1000)
-        
+        self.resize(*self.window_size)
+
+    def keyPressEvent(self, event):
+        if event.key() == Qt.Key_Return or event.key() == Qt.Key_Enter:
+            if not self.name_entry.hasFocus():
+                pass
 
     def load_data(self):
         exe_dir = os.path.dirname(os.path.abspath(sys.executable))
@@ -358,11 +364,13 @@ class RandomNumberRolling(QWidget):
                 settings = json.load(f)
                 self.entries_per_page = settings.get('entries_per_page', 10)
                 self.current_page = settings.get('current_page', 0)
+                self.window_size = tuple(settings.get('window_size', (800, 1000)))
 
     def save_settings(self):
         settings = {
             'entries_per_page': self.entries_per_page,
-            'current_page': self.current_page
+            'current_page': self.current_page,
+            'window_size': (self.width(), self.height())
         }
         settings_path = os.path.join(os.path.dirname(os.path.abspath(sys.executable)), 'settings.json')
         with open(settings_path, 'w') as f:
