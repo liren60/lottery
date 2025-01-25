@@ -1,68 +1,13 @@
-import sys
+import os
+import json
 import random
 import pandas as pd
-import os
-import json  # 添加导入
-from PyQt5.QtWidgets import (QApplication, QWidget, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, 
+from PyQt5.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, 
                              QPushButton, QListWidget, QScrollArea, QMessageBox, QFileDialog, 
-                             QInputDialog, QMenuBar, QMenu)  # type: ignore
-from PyQt5.QtCore import Qt, QTimer, QEvent  # type: ignore
-
-class CustomLineEdit(QLineEdit):
-    def keyPressEvent(self, event):
-        if event.key() == Qt.Key_Return or event.key() == Qt.Key_Enter:
-            # 按回车键时，调用父窗口的 add_entry 方法
-            self.parent().add_entry()
-        else:
-            super().keyPressEvent(event)
-
-class RollingWindow(QWidget):
-    def __init__(self, entries):
-        super().__init__()
-        self.entries = entries
-        self.is_rolling = False
-        self.initUI()
-
-    def initUI(self):
-        self.setWindowTitle("滚动抽奖")
-        self.setWindowFlags(Qt.FramelessWindowHint)
-        self.setStyleSheet("background-color: black;")
-        layout = QVBoxLayout()
-        self.label = QLabel("", self, alignment=Qt.AlignCenter)
-        self.label.setStyleSheet("color: white; font-size: 500px;")
-        layout.addWidget(self.label)
-        self.setLayout(layout)
-        self.showFullScreen()
-        self.setFocusPolicy(Qt.StrongFocus)
-
-    def start_rolling(self):
-        self.is_rolling = True
-        self.rolling_timer = QTimer(self)
-        self.rolling_timer.timeout.connect(self.update_rolling_display)
-        self.rolling_timer.start(100)
-
-    def update_rolling_display(self):
-        if self.is_rolling:
-            selected_entry = random.choice(self.entries)
-            self.label.setText(f"{selected_entry[0]} {selected_entry[1]}")
-            self.label.setStyleSheet(f"color: {random.choice(['red', 'green', 'blue', 'purple', 'orange'])}; font-size: 500px;")
-
-    def pause_rolling(self):
-        self.is_rolling = False
-        self.rolling_timer.stop()
-        if self.entries:
-            selected_entry = random.choice(self.entries)
-            self.label.setText(f"{selected_entry[0]} {selected_entry[1]}")
-            self.label.setStyleSheet("color: blue; font-size: 800px;")
-
-    def keyPressEvent(self, event):
-        if event.key() == Qt.Key_Escape:
-            self.close()
-        elif event.key() == Qt.Key_Space:
-            if self.is_rolling:
-                self.pause_rolling()
-            else:
-                self.start_rolling()
+                             QInputDialog, QMenuBar, QMenu)
+from PyQt5.QtCore import Qt, QTimer
+from custom_line_edit import CustomLineEdit
+from rolling_window import RollingWindow
 
 class RandomNumberRolling(QWidget):
     def __init__(self):
@@ -182,11 +127,6 @@ class RandomNumberRolling(QWidget):
 
         # 设置窗口大小
         self.resize(*self.window_size)
-
-    def keyPressEvent(self, event):
-        if event.key() == Qt.Key_Return or event.key() == Qt.Key_Enter:
-            if not self.name_entry.hasFocus():
-                pass
 
     def load_data(self):
         exe_dir = os.path.dirname(os.path.abspath(sys.executable))
@@ -375,15 +315,3 @@ class RandomNumberRolling(QWidget):
         settings_path = os.path.join(os.path.dirname(os.path.abspath(sys.executable)), 'settings.json')
         with open(settings_path, 'w') as f:
             json.dump(settings, f)
-
-import sys
-from PyQt5.QtWidgets import QApplication
-from main_window import RandomNumberRolling
-
-if __name__ == '__main__':
-    app = QApplication(sys.argv)
-    ex = RandomNumberRolling()
-    app.aboutToQuit.connect(ex.save_data)  # 确保在应用程序退出时保存数据
-    app.aboutToQuit.connect(ex.save_settings)  # 确保在应用程序退出时保存设置
-    ex.show()
-    sys.exit(app.exec_())
