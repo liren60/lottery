@@ -2,9 +2,10 @@ import sys
 import random
 import pandas as pd
 import os
+import json  # 添加导入
 from PyQt5.QtWidgets import (QApplication, QWidget, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, 
                              QPushButton, QListWidget, QScrollArea, QMessageBox, QFileDialog, 
-                             QInputDialog)  # type: ignore
+                             QInputDialog, QMenuBar, QMenu)  # type: ignore
 from PyQt5.QtCore import Qt, QTimer, QEvent  # type: ignore
 
 class CustomLineEdit(QLineEdit):
@@ -75,12 +76,21 @@ class RandomNumberRolling(QWidget):
         self.entries_per_page = 10
         self.total_pages = 1
 
+        self.load_settings()  # 加载设置
         self.initUI()
         self.load_data()
 
     def initUI(self):
         self.setWindowTitle("编号与姓名滚动抽奖")
         layout = QVBoxLayout()
+
+        # 创建菜单栏
+        menubar = QMenuBar(self)
+        file_menu = menubar.addMenu('文件')
+        file_menu.addAction('导入 Excel', self.import_excel)
+        file_menu.addAction('导出 Excel', self.export_excel)
+        file_menu.addAction('退出', self.exit_program)
+        layout.setMenuBar(menubar)
 
         # 标题
         self.label = QLabel("编号 姓名", self, alignment=Qt.AlignCenter)
@@ -154,16 +164,12 @@ class RandomNumberRolling(QWidget):
         import_export_layout.addWidget(self.export_button)
         layout.addLayout(import_export_layout)
 
-        # 开始/停止、全屏和退出按钮
+        # 开始/停止和退出按钮
         start_stop_layout = QHBoxLayout()
         self.start_stop_button = QPushButton("开始(空格快捷键)", self)
         self.start_stop_button.clicked.connect(self.toggle_rolling)
         self.start_stop_button.setShortcut('Space')
         start_stop_layout.addWidget(self.start_stop_button)
-        self.fullscreen_button = QPushButton("全屏(F11)", self)
-        self.fullscreen_button.clicked.connect(self.toggle_fullscreen)
-        self.fullscreen_button.setShortcut('F11')
-        start_stop_layout.addWidget(self.fullscreen_button)
         self.exit_app_button = QPushButton("退出程序", self)
         self.exit_app_button.clicked.connect(self.exit_program)
         self.exit_app_button.setShortcut('Esc')
@@ -273,6 +279,7 @@ class RandomNumberRolling(QWidget):
                 self.entries_per_page = new_entries
                 self.current_page = 0
                 self.update_listbox()
+                self.save_settings()  # 保存设置
             else:
                 QMessageBox.warning(self, "输入错误", "每页显示的条目数必须大于0！")
         except ValueError:
@@ -325,6 +332,7 @@ class RandomNumberRolling(QWidget):
 
     def exit_program(self):
         self.save_data()
+        self.save_settings()  # 保存设置
         QApplication.quit()
 
     def toggle_fullscreen(self):
@@ -343,9 +351,27 @@ class RandomNumberRolling(QWidget):
         self.is_fullscreen = not self.is_fullscreen
         self.start_stop_button.setFocus()
 
+    def load_settings(self):
+        settings_path = os.path.join(os.path.dirname(os.path.abspath(sys.executable)), 'settings.json')
+        if os.path.exists(settings_path):
+            with open(settings_path, 'r') as f:
+                settings = json.load(f)
+                self.entries_per_page = settings.get('entries_per_page', 10)
+                self.current_page = settings.get('current_page', 0)
+
+    def save_settings(self):
+        settings = {
+            'entries_per_page': self.entries_per_page,
+            'current_page': self.current_page
+        }
+        settings_path = os.path.join(os.path.dirname(os.path.abspath(sys.executable)), 'settings.json')
+        with open(settings_path, 'w') as f:
+            json.dump(settings, f)
+
 if __name__ == '__main__':
     app = QApplication(sys.argv)
     ex = RandomNumberRolling()
     app.aboutToQuit.connect(ex.save_data)  # 确保在应用程序退出时保存数据
+    app.aboutToQuit.connect(ex.save_settings)  # 确保在应用程序退出时保存设置
     ex.show()
     sys.exit(app.exec_())
