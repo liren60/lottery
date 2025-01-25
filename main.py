@@ -264,12 +264,14 @@ class RandomNumberRolling(QWidget):
         QApplication.quit()
 
     def keyPressEvent_listbox(self, event):
-        if event.modifiers() & (Qt.ControlModifier | Qt.ShiftModifier):
-            self.listbox.setSelectionMode(QListWidget.MultiSelection)
+        if event.modifiers() & Qt.ShiftModifier:
+            self.listbox.setSelectionMode(QListWidget.ExtendedSelection)
+        else:
+            self.listbox.setSelectionMode(QListWidget.SingleSelection)
         QListWidget.keyPressEvent(self.listbox, event)
 
     def keyReleaseEvent_listbox(self, event):
-        if not (event.modifiers() & (Qt.ControlModifier | Qt.ShiftModifier)):
+        if not (event.modifiers() & Qt.ShiftModifier):
             self.listbox.setSelectionMode(QListWidget.SingleSelection)
         QListWidget.keyReleaseEvent(self.listbox, event)
 
