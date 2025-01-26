@@ -1,5 +1,6 @@
 import sys
-from PyQt5.QtWidgets import QApplication, QWidget
+from PyQt5.QtWidgets import QApplication, QWidget, QInputDialog, QMessageBox, QFileDialog
+from PyQt5.QtCore import Qt, QTimer  # 添加这一行
 from ui_components import setup_main_ui, CustomLineEdit
 from data_management import DataManager
 from rolling_window import RollingWindow
@@ -135,11 +136,13 @@ class RandomNumberRolling(QWidget):
         self.start_stop_button.setFocus()
 
     def start_rolling(self):
-        if self.entries:
+        if self.entries and any(prize['count'] > 0 for prize in self.prizes):
             self.rolling_window = RollingWindow(self.entries, self.prizes, self)
             self.rolling_window.show()
             self.rolling_window.start_rolling()
             self.hide()
+        else:
+            QMessageBox.warning(self, "无法开始抽奖", "没有可用的奖品或奖品数量为0。")
 
     def pause_rolling(self):
         if hasattr(self, 'rolling_window'):
@@ -233,13 +236,22 @@ class RandomNumberRolling(QWidget):
                 QMessageBox.information(self, "删除奖品", f"奖品 {name} 已删除。")
 
     def reset_lottery(self):
+        # 确保每个奖品都有 'original_count' 属性并将其重置
         for prize in self.prizes:
-            if 'original_count' not in prize:
-                prize['original_count'] = prize['count']
-            prize['count'] = prize['original_count']
-        if hasattr(self, 'rolling_window'):
+            prize['count'] = prize['original_count']  # 使用 'original_count' 重置 'count'
+        
+        # 保存重置后的奖品状态
+        self.save_prizes()
+
+        # 关闭任何现存的滚动窗口
+        if hasattr(self, 'rolling_window') and self.rolling_window:
             self.rolling_window.close()
+            del self.rolling_window
+
+        # 确保主窗口显示
         self.show()
+        
+        # 显示复位成功的消息
         QMessageBox.information(self, "复位抽奖", "抽奖状态已复位。")
 
 if __name__ == '__main__':

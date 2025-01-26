@@ -1,6 +1,5 @@
-from PyQt5.QtWidgets import QWidget, QVBoxLayout, QLabel
+from PyQt5.QtWidgets import QWidget, QVBoxLayout, QLabel, QMessageBox
 from PyQt5.QtCore import Qt, QTimer
-from PyQt5.QtWidgets import QMessageBox
 import random
 
 class RollingWindow(QWidget):
@@ -52,7 +51,9 @@ class RollingWindow(QWidget):
             if self.prizes:
                 current_prize = self.prizes[self.current_prize_index]
                 self.prize_label.setText(f"当前奖项: {current_prize['name']} ({current_prize['count']}个)")
-                current_prize['count'] -= 1
+                # 确保奖品数量不会变成负数
+                if current_prize['count'] > 0:
+                    current_prize['count'] -= 1
                 if current_prize['count'] <= 0:
                     self.current_prize_index += 1
                     if self.current_prize_index >= len(self.prizes):
