@@ -1,4 +1,6 @@
 import sys
+import os
+import pandas as pd 
 from PyQt5.QtWidgets import QApplication, QWidget, QInputDialog, QMessageBox, QFileDialog
 from PyQt5.QtCore import Qt, QTimer  # 添加这一行
 from ui_components import setup_main_ui, CustomLineEdit
