@@ -3,6 +3,7 @@ import os
 import pandas as pd 
 from PyQt5.QtWidgets import QApplication, QWidget, QInputDialog, QMessageBox, QFileDialog
 from PyQt5.QtCore import Qt, QTimer  # 添加这一行
+from PyQt5.QtGui import QFont  # 添加这一行
 from ui_components import setup_main_ui, CustomLineEdit
 from data_management import DataManager
 from rolling_window import RollingWindow
@@ -33,6 +34,18 @@ class RandomNumberRolling(QWidget):
         layout = setup_main_ui(self)
         self.setLayout(layout)
         self.resize(*self.window_size)
+        self.adjust_font_sizes()  # 调整字体大小
+
+    def adjust_font_sizes(self):
+        screen = self.screen()
+        screen_size = screen.size()
+        font_size_label = screen_size.height() // 40
+        self.label.setFont(QFont('Arial', font_size_label))
+        self.name_entry.setFont(QFont('Arial', font_size_label))
+        self.listbox.setFont(QFont('Arial', font_size_label))
+        self.page_label.setFont(QFont('Arial', font_size_label))
+        self.entries_per_page_entry.setFont(QFont('Arial', font_size_label))
+        self.start_stop_button.setFont(QFont('Arial', font_size_label))
 
     def keyPressEvent(self, event):
         if event.key() == Qt.Key_Return or event.key() == Qt.Key_Enter:
@@ -108,6 +121,7 @@ class RandomNumberRolling(QWidget):
             self.listbox.addItem(f"{entry[0]} {entry[1]}")
         self.total_pages = (len(self.entries) + self.entries_per_page - 1) // self.entries_per_page
         self.page_label.setText(f"当前页: {self.current_page + 1} / {self.total_pages}")
+        self.adjust_font_sizes()  # 调整字体大小
 
     def prev_page(self):
         if self.current_page > 0:
@@ -194,6 +208,7 @@ class RandomNumberRolling(QWidget):
                     item.widget().hide()
         self.is_fullscreen = not self.is_fullscreen
         self.start_stop_button.setFocus()
+        self.adjust_font_sizes()  # 调整字体大小
 
     def add_prize(self):
         name, ok = QInputDialog.getText(self, "添加奖品", "请输入奖品名称（如'汽车'）：")
