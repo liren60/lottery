@@ -2,6 +2,7 @@ from PyQt5.QtWidgets import QWidget, QVBoxLayout, QLabel, QMessageBox
 from PyQt5.QtCore import Qt, QTimer
 from PyQt5.QtGui import QFont
 import random
+from collections import deque
 
 class RollingWindow(QWidget):
     def __init__(self, entries, prizes, parent):
@@ -12,6 +13,7 @@ class RollingWindow(QWidget):
         self.current_prize_index = 0
         self.parent = parent  # 保存对父窗口的引用
         self.font_size = 30  # 默认值，稍后会在 update_font_size 中更新
+        self.random_sequence = deque(random.sample(entries, len(entries)))  # 预生成随机序列
         self.initUI()
 
     def initUI(self):
@@ -62,7 +64,9 @@ class RollingWindow(QWidget):
     def update_rolling_display(self):
         """更新滚动显示"""
         if self.is_rolling:
-            selected_entry = random.choice(self.entries)
+            if not self.random_sequence:
+                self.random_sequence = deque(random.sample(self.entries, len(self.entries)))
+            selected_entry = self.random_sequence.popleft()
             self.label.setText(f"{selected_entry[0]} {selected_entry[1]}")
             if self.prizes:
                 current_prize = self.prizes[self.current_prize_index]

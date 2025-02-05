@@ -1,13 +1,45 @@
 import sys
 import os
 import pandas as pd
-from PyQt5.QtWidgets import QApplication, QWidget, QInputDialog, QMessageBox, QFileDialog, QVBoxLayout, QPushButton
-from PyQt5.QtCore import Qt
+from PyQt5.QtWidgets import QApplication, QWidget, QInputDialog, QMessageBox, QFileDialog, QVBoxLayout, QPushButton, QListView
+from PyQt5.QtCore import Qt, QAbstractItemModel, QModelIndex
 from ui_components import setup_main_ui, CustomLineEdit
 from data_management import DataManager
 from rolling_window import RollingWindow
 from prize_management_window import PrizeManagementWindow
 import random
+
+class EntryModel(QAbstractItemModel):
+    def __init__(self, entries, parent=None):
+        super().__init__(parent)
+        self.entries = entries
+
+    def rowCount(self, parent=QModelIndex()):
+        return len(self.entries)
+
+    def columnCount(self, parent=QModelIndex()):
+        return 2
+
+    def data(self, index, role=Qt.DisplayRole):
+        if role == Qt.DisplayRole:
+            row, column = index.row(), index.column()
+            if column == 0:
+                return str(self.entries[row][0])
+            elif column == 1:
+                return self.entries[row][1]
+        return None
+
+    def headerData(self, section, orientation, role=Qt.DisplayRole):
+        if role == Qt.DisplayRole:
+            if orientation == Qt.Horizontal:
+                return ['编号', '姓名'][section]
+        return None
+
+    def index(self, row, column, parent=QModelIndex()):
+        return self.createIndex(row, column)
+
+    def parent(self, index):
+        return QModelIndex()
 
 class RandomNumberRolling(QWidget):
     def __init__(self):
@@ -34,6 +66,10 @@ class RandomNumberRolling(QWidget):
         layout = setup_main_ui(self)
         self.setLayout(layout)
         self.resize(*self.window_size)
+
+        self.model = EntryModel(self.entries, self)
+        self.listbox = QListView(self)
+        self.listbox.setModel(self.model)
 
         # 添加奖品管理按钮
         prize_management_button = QPushButton("管理奖品", self)
@@ -90,12 +126,20 @@ class RandomNumberRolling(QWidget):
                 self.current_id += 1
                 self.update_listbox()
                 self.name_entry.clear()
+                QMessageBox.information(self, "添加条目", f"成功添加条目: {name}")
+            else:
+                QMessageBox.warning(self, "添加条目", f"条目 '{name}' 已存在！")
+        else:
+            QMessageBox.warning(self, "添加条目", "请输入姓名！")
 
     def delete_entry(self):
         if self.listbox.selectedItems():
             for item in reversed(self.listbox.selectedItems()):
                 self.entries.pop(self.listbox.row(item))
             self.update_listbox()
+            QMessageBox.information(self, "删除条目", "选中条目已删除。")
+        else:
+            QMessageBox.warning(self, "删除条目", "请先选择要删除的条目。")
 
     def modify_entry(self):
         if self.listbox.selectedItems():

@@ -19,14 +19,20 @@ def get_settings_path():
 class DataManager:
     def load_data(self):
         file_path = get_data_path()
-        if os.path.exists(file_path):
-            df = pd.read_excel(file_path)
-            return list(df.itertuples(index=False, name=None))
+        try:
+            if os.path.exists(file_path):
+                df = pd.read_excel(file_path)
+                return list(df.itertuples(index=False, name=None))
+        except Exception as e:
+            print(f"Error loading data: {e}")
         return []
 
     def save_data(self, entries):
-        df = pd.DataFrame(entries, columns=['编号', '姓名'])
-        df.to_excel(get_data_path(), index=False)
+        try:
+            df = pd.DataFrame(entries, columns=['编号', '姓名'])
+            df.to_excel(get_data_path(), index=False)
+        except Exception as e:
+            print(f"Error saving data: {e}")
 
     def load_settings(self):
         settings_path = get_settings_path()
