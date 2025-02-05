@@ -1,9 +1,12 @@
 import sys
-from PyQt5.QtWidgets import QApplication, QWidget, QInputDialog, QMessageBox, QFileDialog
-from PyQt5.QtCore import Qt, QTimer  # 添加这一行
+import os
+import pandas as pd
+from PyQt5.QtWidgets import QApplication, QWidget, QInputDialog, QMessageBox, QFileDialog, QVBoxLayout, QPushButton
+from PyQt5.QtCore import Qt
 from ui_components import setup_main_ui, CustomLineEdit
 from data_management import DataManager
 from rolling_window import RollingWindow
+from prize_management_window import PrizeManagementWindow
 import random
 
 class RandomNumberRolling(QWidget):
@@ -31,6 +34,11 @@ class RandomNumberRolling(QWidget):
         layout = setup_main_ui(self)
         self.setLayout(layout)
         self.resize(*self.window_size)
+
+        # 添加奖品管理按钮
+        prize_management_button = QPushButton("管理奖品", self)
+        prize_management_button.clicked.connect(self.open_prize_management)
+        layout.addWidget(prize_management_button)
 
     def keyPressEvent(self, event):
         if event.key() == Qt.Key_Return or event.key() == Qt.Key_Enter:
@@ -253,6 +261,10 @@ class RandomNumberRolling(QWidget):
         
         # 显示复位成功的消息
         QMessageBox.information(self, "复位抽奖", "抽奖状态已复位。")
+
+    def open_prize_management(self):
+        self.prize_management_window = PrizeManagementWindow(self.prizes, self)
+        self.prize_management_window.show()
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
